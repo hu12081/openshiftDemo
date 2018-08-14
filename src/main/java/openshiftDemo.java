@@ -14,7 +14,7 @@ public class openshiftDemo {
       .withTrustCerts(true).build();
     OpenShiftClient client = new DefaultOpenShiftClient(config);
     //获取用户token
-    System.out.println(authorize(client,config));
+    System.out.println(authorize(client.getHttpClient(),config));
     //获取工程列表，这里必须是集群管理员的账号
     NamespaceList myNs = client.namespaces().list();
     //遍历打印工程名
