@@ -1,28 +1,45 @@
 import io.fabric8.kubernetes.api.model.NamespaceList;
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.utils.URLUtils;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
 import io.fabric8.openshift.client.OpenShiftConfigBuilder;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import java.net.URL;
+
 public class openshiftDemo {
-  public static void main(String[] args) {
-    OpenShiftConfig config = new OpenShiftConfigBuilder()
-      .withOpenShiftUrl("https://master.example.com:8443")
-      .withMasterUrl("https://master.example.com:8443")
-      .withUsername("dev")
-      .withPassword("dev")
-      .withTrustCerts(true).build();
-    OpenShiftClient client = new DefaultOpenShiftClient(config);
-    //获取用户token
-    System.out.println(authorize(client.getHttpClient(),config));
-    //获取工程列表，这里必须是集群管理员的账号
-    NamespaceList myNs = client.namespaces().list();
-    //遍历打印工程名
-    for(Namespace ns: myNs.getItems())
-      System.out.println(ns.getMetadata().getName());
-  }
-  //获取token
-  public  static String authorize(OkHttpClient client, OpenShiftConfig config) {
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String LOCATION = "Location";
+    private static final String AUTHORIZE_PATH = "oauth/authorize?response_type=token&client_id=openshift-challenging-client";
+
+    private static final String BEFORE_TOKEN = "access_token=";
+    private static final String AFTER_TOKEN = "&expires";
+
+    public static void main(String[] args) {
+        OpenShiftConfig config = new OpenShiftConfigBuilder()
+                .withOpenShiftUrl("https://master.example.com:8443")
+                .withMasterUrl("https://master.example.com:8443")
+                .withUsername("dev")
+                .withPassword("dev")
+                .withTrustCerts(true).build();
+        DefaultOpenShiftClient client = new DefaultOpenShiftClient(config);
+        openshiftDemo openshiftDemo=new openshiftDemo();
+        //获取用户token
+        System.out.println(openshiftDemo.authorize(client.getHttpClient(), config));
+        //获取工程列表，这里必须是集群管理员的账号
+        NamespaceList myNs = client.namespaces().list();
+        //遍历打印工程名
+        for (Namespace ns : myNs.getItems())
+            System.out.println(ns.getMetadata().getName());
+    }
+
+    //获取token
+    public String authorize(OkHttpClient client, OpenShiftConfig config) {
         try {
             OkHttpClient.Builder builder = client.newBuilder();
             builder.interceptors().remove(this);
